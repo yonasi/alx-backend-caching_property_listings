@@ -1,23 +1,7 @@
-from django.core.cache import cache
-from .models import Property
 import logging
 from django.core.cache import cache
 from django_redis import get_redis_connection
 from .models import Property
-
-def get_all_properties():
-    # Check if the queryset is in Redis
-    properties = cache.get('all_properties')
-    
-    if properties is None:
-        # If not in cache, fetch from database
-        properties = Property.objects.all()
-        # Store in Redis with 1-hour TTL (3600 seconds)
-        cache.set('all_properties', properties, 3600)
-    
-    return properties
-
-
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -45,9 +29,9 @@ def get_redis_cache_metrics():
         hits = info.get('keyspace_hits', 0)
         misses = info.get('keyspace_misses', 0)
         
-        # Calculate hit ratio
+        # Calculate hit ratio, avoiding division by zero
         total = hits + misses
-        hit_ratio = hits / total if total > 0 else 0.0
+        hit_ratio = 0.0 if total == 0 else hits / total
         
         # Log metrics
         logger.info(
